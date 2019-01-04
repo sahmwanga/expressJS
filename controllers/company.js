@@ -10,34 +10,52 @@ module.exports = {
   },
 
   list(req, res) {
-    return comp.all({})
+    return comp.findAll()
       .then(comp => res.status(200).send(comp))
       .catch(error => res.status(400).send(error));
   },
   getCompany(req, res) {
     return comp.findById(req.params.id)
-      .then(data => res.send(data))
-      .catch(error => res.send(error))
+      .then(data => {
+        if (!data) {
+          return res.status(400).send({
+            message: "No company found"
+          })
+        }
+        res.send(data)
+      })
+      .catch(error => res.status(400).send(error))
   },
   edit(req, res) {
-    return comp.update({
-        name: req.body.name
-      }, {
-        returning: true,
-        where: {
-          id: req.params.id
+    return comp.findById(req.params.id)
+      .then(cmp => {
+        if (!cmp) {
+          return res.status(404).send({
+            message: 'Company not found'
+          })
         }
+
+        return cmp.update({
+            name: req.body.name || cmp.name
+          })
+          .then(() => res.status(200).send(cmp))
+          .catch(error => res.status(400).send(error))
+
       })
-      .then((rowsUpdated) => console.log(rowsUpdated))
-      .catch(error => console.log(error))
+      .catch()
   },
   delete(req, res) {
-    return comp.destroy({
-        where: {
-          id: req.params.id
+    return comp.findById(req.params.id)
+      .then(cmp => {
+        if (!cmp) {
+          return res.status(404).send({
+            message: 'Company not found!'
+          });
         }
+        return cmp.destroy()
+          .then(() => res.status(204).send())
+          .catch(error => res.status(400).send(error))
       })
-      .then(data => res.send(data))
-      .catch(error => res.send(error))
+      .catch(error => res.status(400).send(error))
   }
 }
